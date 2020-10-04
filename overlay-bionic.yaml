@@ -1,0 +1,12 @@
+series: bionic
+
+variables:
+  openstack-origin: &openstack-origin cloud:bionic-ussuri
+
+applications:
+  keystone-sp:
+    options:
+      openstack-origin: *openstack-origin
+  keystone-idp:
+    options:
+      openstack-origin: *openstack-origin

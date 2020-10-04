@@ -1,0 +1,12 @@
+series: focal
+
+variables:
+  openstack-origin: &openstack-origin distro
+
+applications:
+  keystone-sp:
+    options:
+      openstack-origin: *openstack-origin
+  keystone-idp:
+    options:
+      openstack-origin: *openstack-origin

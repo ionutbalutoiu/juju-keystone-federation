@@ -1,0 +1,62 @@
+machines:
+  '0':
+    constraints: "tags=openstack"
+
+variables:
+  worker-multiplier: &worker-multiplier 0.25
+
+applications:
+  keystone-sp:
+    charm: cs:keystone-317
+    num_units: 1
+    options:
+      worker-multiplier: *worker-multiplier
+      database: keystonesp
+      database-user: keystonesp
+    to:
+    - lxd:0
+  keystone-saml-mellon:
+    charm: cs:keystone-saml-mellon-1
+    options:
+      idp-name: keystone_idp
+      protocol-name: mapped
+    resources:
+      sp-signing-keyinfo: "./sp-signing-keyinfo.xml"
+      sp-private-key: "./sp-private-key.pem"
+  keystone-idp:
+    charm: cs:keystone-317
+    num_units: 1
+    options:
+      worker-multiplier: *worker-multiplier
+      database: keystoneidp
+      database-user: keystoneidp
+    to:
+    - lxd:0
+  percona-cluster:
+    # We overwrite the global series and use Bionic since this is the last
+    # supported series in the charm. This is going to be an LXD container with
+    # the database, so we're fine using Bionic.
+    series: bionic
+    charm: cs:percona-cluster-291
+    num_units: 1
+    options:
+      innodb-buffer-pool-size: "25%"
+      performance-schema: True
+      max-connections: 10000
+    to:
+    - lxd:0
+  vault:
+    charm: cs:vault-40
+    num_units: 1
+    to:
+    - lxd:0
+
+relations:
+  - ["vault:shared-db", "percona-cluster:shared-db"]
+
+  - ["keystone-sp:shared-db", "percona-cluster:shared-db"]
+  - ["keystone-sp:certificates", "vault:certificates"]
+  - ["keystone-sp", "keystone-saml-mellon"]
+
+  - ["keystone-idp:shared-db", "percona-cluster:shared-db"]
+  - ["keystone-idp:certificates", "vault:certificates"]
